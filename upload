@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Execute arc diff and git commands automatically for convenience
+#
+logfile=~/lgbt.md
+echo '#Push Event'$'\n' >> "$logfile"
+echo "A new push operation started at `date`"$'\n' >> "$logfile"
+echo "Git operation start..."
+echo "Checking branch..."
+
+currentbranch="`git br|grep '*'|cut -d' ' -f 2`"
+if [ $currentbranch == "dev" ];then
+   echo "You shouldn't operate on dev branch"
+   echo "> -You shouldn't operate on dev branch" >> "$logfile"
+   exit 1
+fi
+echo "Current branch = $currentbranch" 
+echo "> -Branch=$currentbranch"$'\n' >> "$logfile"
+echo "> -Last commit:"$'\n' >> "$logfile"
+echo "> -`git log -1 --stat`"$'\n' >> "$logfile"
+echo "Prepare for arc diff..."
+git stash && arc diff && echo "diff upload succeed" && git push -u origin $currentbranch && echo "git push succeed" && echo "Push sucess" >> "$logfile" && exit 1
+echo "Push failed" >> "$logfile"

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+#  Auto sync repo(babytree-android & pregnancy-v2-android)
+#
+
+logfile=~/lgbt.md
+if [ ! -f "$logfile" ]; then
+   echo 'log file does not exist!'
+   touch lgbt.md && echo 'Create lgbt.md'
+   echo '##Git log'$'\n' >> "$logfile"
+   echo 'This file contains git log for babytree-android & pregnancy-v2-android.'$'\n' >> "$logfile"
+fi
+gitpull(){
+	echo "> -Current folder = `pwd`"$'\n' >> "$logfile"
+	git branch
+	git co dev
+	if [ "`git br|grep '* dev'`" == "* dev" ];then
+	   echo "> -Branch=dev"$'\n' >> "$logfile"
+	   git fetch origin && git pull origin dev && echo "git pull sucess"
+	else
+	  "> -Branch=`git br|grep '*'`" >> "$logfile"
+	  echo 'checkout branch dev failed!'
+	fi
+}
+echo 'Sync babytree-android ...'
+echo '#Pull Event'$'\n' >> "$logfile"
+echo "A new sync operation started at `date`"$'\n' >> "$logfile"
+echo '> -Change to project babytree-android folder'$'\n' >> "$logfile"
+cd /d/babytree/babytree-android
+gitpull
+echo 'Sync pregnancy-v2-android ...'
+echo '> -Change to project pregnancy-v2-android folder'$'\n' >> "$logfile"
+cd /d/babytree/pregnancy-v2-android
+gitpull
+echo 'Sync finished'
