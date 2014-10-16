@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+#
+#  Auto sync repo(babytree-android & pregnancy-v2-android)
+#  @Author Chaobin Wu
+#
+echo "Developer Tool started..."$'\n'"Reading config file..."
+source .babytree
+if [ ! -f "$LOG_FILE" ]; then
+   echo "log file does not exist!"
+   touch $LOG_FILE && echo "Create $LOG_FILE"
+   echo "##Git log"$'\n' >> "$LOG_FILE"
+   echo "This file contains git log for develop."$'\n' >> "$LOG_FILE"
+fi
+#echo log on screen & save result to log file
+save(){
+  echo $1 && echo "$1"$'\n' >> "$LOG_FILE"
+}
+
+openLog(){
+    if [ $AUTO_OPEN_LOG_FILE == "true" ]; then
+        start "$LOG_FILE"
+    fi;
+}
+#Checkout branch wirh pre-defined format, eg: 141013_wuHotFix_dev(date_userBranch_dev)
+checkoutBranch(){
+    git checkout -b "`date +%y%m%d`_${DEVELOPER}`tr [:lower:] [:upper:]<<<${1:0:1}`${1:1}_dev"
+}
+
+#Fetch & pull the repo
+fetchRepo(){
+    projects=(${PROJECT_FOLDER//,/ })
+    for folder in ${projects[@]}; do
+	echo "Sync $folder ..."
+        echo "#Pull Event"$'\n' >> "$LOG_FILE"
+        echo "A new sync operation started at `date`"$'\n' >> "$LOG_FILE"
+        echo "> -Change to project $folder"$'\n' >> "$LOG_FILE"
+	cd $folder %% echo "> -Current folder = `pwd`"$'\n' >> "$LOG_FILE"
+	git branch && git checkout dev
+	if [ "`git branch|grep '* dev'`" == "* dev" ];then
+	   echo "> -Branch=dev"$'\n' >> "$LOG_FILE"
+	   save `git fetch origin`
+	   save `git pull origin dev`
+	   save "git pull sucess"
+	else
+	  "> -Branch=`git branch|grep '*'`" >> "$LOG_FILE"
+	  save 'checkout branch dev failed!'
+	fi
+    done
+    echo 'Sync finished'
+    openLog
+}
+
+#Generate branch diff and upload it with arc, then push branch to remote
+pushRepo(){
+    echo "#Push Event"$'\n' >> "$LOG_FILE"
+    echo "A new push operation started at `date`"$'\n' >> "$LOG_FILE"
+    echo "Git operation start..."
+    echo "Checking branch..."
+
+    currentbranch="`git branch|grep '*'|cut -d' ' -f 2`"
+    if [ $currentbranch == "dev" ];then
+        echo "You shouldn't operate on dev branch"
+        echo "> -You shouldn't operate on dev branch" >> "$LOG_FILE"
+        exit 1
+    fi
+    echo "Current branch = $currentbranch" 
+    echo "> -Branch=$currentbranch"$'\n' >> "$LOG_FILE"
+    echo "> -Last commit:"$'\n' >> "$LOG_FILE"
+    echo "> -`git log -1 --stat`"$'\n' >> "$LOG_FILE"
+    echo "Prepare for arc diff..."
+    git stash && arc diff && echo "diff upload succeed" && git push -u origin $currentbranch && echo "git push succeed" && echo "Push sucess" >> "$LOG_FILE" && exit 1
+    echo "Push failed" >> "$LOG_FILE"
+    openLog
+}
+exectute(){
+    case $1 in
+        (pl|pull)
+        fetchRepo
+	;;
+	(ph|push)
+         pushRepo
+	;;
+	(-h|--help|help)
+        echo "Usage: btool [command]"$'\n'
+	echo "All supported commands are:"$'\n'
+	echo -e "\\tpush  Generate branch diff and upload it with arc, then push branch to remote."
+	echo -e "\\tpull  Fetch & pull the repo to locale."
+	echo -e "\\thelp  Show usgae introduction."
+	;;
+    esac
+}
+
+i=1
+for arg in "$@" ; do
+    i=$((i+1))
+    if [ "$arg" == "checkout" ] || [ "$arg" == "co" ] && [ ! -z ${!i} ]; then
+        checkoutBranch ${!i}
+    else
+        exectute $arg
+    fi
+done
+if [ $i -eq 1 ]; then
+echo "See 'btool help' for more information."
+fi

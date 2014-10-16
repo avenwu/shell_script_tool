@@ -1,0 +1,8 @@
+#log file path
+LOG_FILE=~/babytree-log.md
+#user name
+DEVELOPER=wcb
+#path array of projects
+PROJECT_FOLDER=/d/babytree/babytree-android,/d/babytree/pregnancy-v2-android
+#open log file after push/pull
+AUTO_OPEN_LOG_FILE=true
